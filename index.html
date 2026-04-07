@@ -299,6 +299,35 @@
         </div>
     </section>
 
+    <!-- LANDING PAGE: El Proceso (How it works - Dinámico) -->
+    <section class="py-20 px-6 bg-zinc-950 reveal">
+        <div class="max-w-5xl mx-auto">
+            <h2 class="text-center text-3xl font-serif text-neutral-200 mb-16">¿Cómo asegurar tu fecha?</h2>
+            
+            <div class="flex flex-col md:flex-row justify-center items-start md:items-center gap-8 md:gap-4 relative">
+                <div class="hidden md:block absolute top-1/2 left-[15%] right-[15%] h-px bg-white/10 -translate-y-1/2 z-0"></div>
+
+                <div class="flex-1 flex flex-col items-center text-center relative z-10 group cursor-default">
+                    <div class="w-16 h-16 rounded-full bg-zinc-900 border-2 border-amber-500 flex items-center justify-center text-amber-500 font-bold text-xl mb-4 shadow-[0_0_15px_rgba(212,175,55,0.2)] group-hover:scale-110 group-hover:bg-amber-500/10 transition-all duration-300">1</div>
+                    <h4 id="renderStep1Title" class="font-bold text-neutral-200 mb-2"></h4>
+                    <p id="renderStep1Desc" class="text-xs text-neutral-400 px-4"></p>
+                </div>
+                
+                <div class="flex-1 flex flex-col items-center text-center relative z-10 group cursor-default">
+                    <div class="w-16 h-16 rounded-full bg-zinc-900 border-2 border-amber-500 flex items-center justify-center text-amber-500 font-bold text-xl mb-4 shadow-[0_0_15px_rgba(212,175,55,0.2)] group-hover:scale-110 group-hover:bg-amber-500/10 transition-all duration-300 delay-75">2</div>
+                    <h4 id="renderStep2Title" class="font-bold text-neutral-200 mb-2"></h4>
+                    <p id="renderStep2Desc" class="text-xs text-neutral-400 px-4"></p>
+                </div>
+
+                <div class="flex-1 flex flex-col items-center text-center relative z-10 group cursor-default">
+                    <div class="w-16 h-16 rounded-full bg-amber-600 border-2 border-amber-500 flex items-center justify-center text-white font-bold text-xl mb-4 shadow-[0_0_20px_rgba(212,175,55,0.4)] group-hover:scale-110 transition-all duration-300 delay-150">3</div>
+                    <h4 id="renderStep3Title" class="font-bold text-amber-400 mb-2"></h4>
+                    <p id="renderStep3Desc" class="text-xs text-neutral-300 px-4"></p>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- EL CATÁLOGO (LEAD MAGNET) -->
     <div id="catalogo" class="max-w-5xl mx-auto px-4 md:px-6 py-10 md:py-16 scroll-mt-20 reveal">
         
@@ -743,8 +772,9 @@
                             </div>
                             
                             <div class="grid grid-cols-12 gap-2 px-4 py-2 text-[10px] uppercase font-bold text-neutral-500 border-b border-white/10 mb-2">
-                                <div class="col-span-5">Pieza / Referencia</div>
-                                <div class="col-span-4">Géneros Musicales</div>
+                                <div class="col-span-4">Pieza</div>
+                                <div class="col-span-3">Referencia</div>
+                                <div class="col-span-2">Géneros</div>
                                 <div class="col-span-1 text-center" title="Veces solicitada">Clics</div>
                                 <div class="col-span-2 text-right">Acciones</div>
                             </div>
@@ -765,9 +795,10 @@
                             
                             <div class="grid grid-cols-12 gap-2 px-4 py-2 text-[10px] uppercase font-bold text-neutral-500 border-b border-white/10 mb-2 hidden md:grid">
                                 <div class="col-span-3">Cliente & Contacto</div>
-                                <div class="col-span-3">Evento & Fecha</div>
+                                <div class="col-span-2">Evento</div>
+                                <div class="col-span-2">Fecha & Hora</div>
                                 <div class="col-span-3">Selección</div>
-                                <div class="col-span-3 text-right">Acciones</div>
+                                <div class="col-span-2 text-right">Acciones</div>
                             </div>
 
                             <div id="repertoiresAdminList" class="space-y-2 md:space-y-1 border border-white/5 p-2 rounded-xl bg-zinc-900/10 min-h-[300px] max-h-[600px] overflow-y-auto custom-scrollbar"></div>
@@ -1104,7 +1135,21 @@
         };
 
         // --- Firebase Auth & Init ---
-        signInAnonymously(auth).catch((error) => console.error("Firebase Auth Error:", error));
+        signInAnonymously(auth).catch((error) => {
+            console.error("Firebase Auth Error:", error);
+            const loadingText = document.getElementById('loadingText');
+            if (loadingText && (error.code === 'auth/configuration-not-found' || error.code === 'auth/operation-not-allowed')) {
+                loadingText.innerHTML = `<span class="text-red-400 font-bold">Atención Admin:</span><br>En tu nuevo proyecto de Firebase, ve a <b>Authentication > Sign-in method</b> y habilita el proveedor <b>Anónimo</b> para que la página funcione.`;
+                document.querySelector('#loadingState i').classList.remove('animate-spin', 'text-amber-500');
+                document.querySelector('#loadingState i').classList.add('text-red-500');
+                if(window.lucide) {
+                    document.querySelector('#loadingState i').setAttribute('data-lucide', 'alert-circle');
+                    window.lucide.createIcons();
+                }
+            } else if (loadingText) {
+                loadingText.innerText = "Error de conexión de autenticación. Intenta recargar la página.";
+            }
+        });
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
@@ -1118,7 +1163,21 @@
                     }
                 }, (error) => {
                     console.error("Error cargando canciones:", error);
-                    document.getElementById('loadingText').innerText = "Error cargando el repertorio.";
+                    const loadingText = document.getElementById('loadingText');
+                    if (loadingText) {
+                        if (error.code === 'permission-denied' || error.message.includes('permissions')) {
+                            loadingText.innerHTML = `<span class="text-red-500 font-bold">Atención Admin:</span><br>Falta configurar las Reglas de Firestore.<br><span class="text-xs text-neutral-400 mt-2 block">Ve a <b>Firebase > Firestore Database > Reglas</b> y pon:<br><code class="bg-zinc-900 p-1 rounded text-amber-500 border border-white/10 mt-1 inline-block">allow read, write: if request.auth != null;</code></span>`;
+                            const icon = document.querySelector('#loadingState i');
+                            if (icon) {
+                                icon.classList.remove('animate-spin', 'text-amber-500');
+                                icon.classList.add('text-red-500');
+                                icon.setAttribute('data-lucide', 'shield-alert');
+                                if(window.lucide) window.lucide.createIcons();
+                            }
+                        } else {
+                            loadingText.innerText = "Error cargando el repertorio.";
+                        }
+                    }
                 });
 
                 onSnapshot(doc(db, "rlm_settings", "general"), (docSnap) => {
@@ -1187,6 +1246,9 @@
                 }
             }, (error) => {
                 console.error("Error obteniendo repertorios (posible falta de permisos):", error);
+                if (error.code === 'permission-denied' || error.message.includes('permissions')) {
+                    alert("⚠️ Error de permisos: Tu usuario Administrador no tiene permisos para leer los repertorios. Verifica las Reglas de Firebase.");
+                }
             });
         };
 
@@ -1377,6 +1439,7 @@
                     ? `<button onclick="window.openMediaModal(event, '${s.link}')" class="ml-2 text-amber-500 hover:text-white bg-amber-500/10 hover:bg-amber-600 rounded-full p-1.5 transition-all duration-200 active:scale-90" title="Escuchar"><i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i></button>` 
                     : '';
 
+                // Reducido height visual: p-6 -> p-4 md:p-5, mb-3 -> mb-2
                 return `
                 <div onclick="window.toggleCatalogSong('${s.id}')" style="animation-delay: ${index * 0.05}s" class="song-card stagger-card cursor-pointer bg-zinc-900/40 border border-white/5 rounded-2xl p-4 md:p-5 hover:bg-zinc-800 transition-all duration-300 ${isSelected ? 'selected' : ''} group relative flex flex-col justify-between active:scale-[0.98]">
                     <div>
@@ -1973,14 +2036,16 @@
                 const genresArr = getGenresArray(s.genero);
                 return `
                 <div class="grid grid-cols-12 gap-2 items-center bg-zinc-800/40 hover:bg-zinc-800/80 p-2.5 rounded-lg border border-white/5 transition-colors">
-                    <div class="col-span-5 min-w-0">
+                    <div class="col-span-4 min-w-0">
                         <div class="flex items-center gap-2">
-                            <p class="text-xs font-bold text-neutral-200 truncate">${s.titulo}</p>
+                            <p class="text-xs font-bold text-neutral-200 truncate" title="${s.titulo}">${s.titulo}</p>
                             ${s.link ? `<button onclick="window.openMediaModal(event, '${s.link}')" class="text-amber-500 hover:text-amber-400 flex-shrink-0"><i data-lucide="play-circle" class="w-3 h-3"></i></button>` : ''}
                         </div>
-                        <p class="text-[9px] text-neutral-500 truncate">${s.ref}</p>
                     </div>
-                    <div class="col-span-4 text-[9px] text-neutral-400 flex flex-wrap gap-1">
+                    <div class="col-span-3 min-w-0">
+                        <p class="text-[10px] text-neutral-400 truncate" title="${s.ref}">${s.ref}</p>
+                    </div>
+                    <div class="col-span-2 text-[9px] text-neutral-400 flex flex-wrap gap-1">
                         ${genresArr.slice(0,2).map(g => `<span class="bg-zinc-900 px-1.5 py-0.5 rounded border border-white/10 truncate max-w-[80px]" title="${g}">${g}</span>`).join('')}
                         ${genresArr.length > 2 ? `<span class="text-[9px]">+${genresArr.length - 2}</span>` : ''}
                     </div>
@@ -2065,15 +2130,18 @@
                         <p class="text-xs font-bold text-neutral-200 truncate">${r.clientName || 'Sin Nombre'}</p>
                         <p class="text-[9px] text-neutral-500 truncate">${r.clientPhone || 'Sin Teléfono'}</p>
                     </div>
-                    <div class="col-span-3 min-w-0">
-                        <p class="text-[10px] text-amber-500 font-bold truncate">${r.eventType || 'No esp.'}</p>
-                        <p class="text-[9px] text-neutral-300 truncate">${r.clientDate || 'Sin fecha'}</p>
+                    <div class="col-span-2 min-w-0">
+                        <p class="text-[10px] text-amber-500 font-bold truncate" title="${r.eventType || 'No esp.'}">${r.eventType || 'No esp.'}</p>
+                    </div>
+                    <div class="col-span-2 min-w-0">
+                        <p class="text-[10px] text-neutral-300 truncate">${r.clientDate || 'Sin fecha'}</p>
+                        <p class="text-[9px] text-neutral-500 truncate">${r.clientTime || 'Sin hora'}</p>
                     </div>
                     <div class="col-span-3">
                         <span class="text-xs font-mono font-bold text-amber-500/80 bg-amber-500/10 px-2 py-0.5 rounded">${r.songs?.length || 0} piezas</span>
-                        <p class="text-[8px] text-neutral-500 mt-0.5">${formattedDate}</p>
+                        <p class="text-[8px] text-neutral-500 mt-0.5" title="Registro: ${formattedDate}">Reg: ${formattedDate.split(' ')[0]}</p>
                     </div>
-                    <div class="col-span-3 flex justify-end gap-1">
+                    <div class="col-span-2 flex justify-end gap-1">
                         <button onclick="window.editAdminRepertoire('${r.id}')" class="text-blue-400 hover:bg-blue-400/20 p-1.5 rounded transition-colors" title="Editar y Generar Imagen"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
                         <button onclick="window.deleteRepertoire('${r.id}')" class="text-red-400 hover:bg-red-400/20 p-1.5 rounded transition-colors" title="Eliminar"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
                     </div>
@@ -2314,7 +2382,7 @@
                 }).join(" | ");
                 csvContent += `${escapeCSV(r.clientName)},${escapeCSV(r.clientPhone)},${escapeCSV(r.eventType)},${escapeCSV(r.clientDate)},${escapeCSV(r.clientTime)},${escapeCSV(r.clientLocation)},${escapeCSV(r.clientSource)},${escapeCSV(r.comments)},${escapeCSV(r.timestamp)},${escapeCSV(songsList)}\n`;
             });
-            const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csvContent], { type: 'text/csv;charset=utf-8' });
             const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
             link.setAttribute("href", url);
@@ -2413,15 +2481,23 @@
             });
         };
 
-        // --- CSV Export (Catálogo) ---
-        const escapeCSV = (str) => `"${(str || '').toString().replace(/"/g, '""')}"`;
+        // --- CSV Export (Catálogo y Seguridad) ---
+        const escapeCSV = (str) => {
+            let val = (str || '').toString();
+            // Prevención de Inyección CSV (Formula Injection)
+            if (/^[=\+\-@]/.test(val)) {
+                val = "'" + val; // Convierte la fórmula en texto plano para Excel
+            }
+            return `"${val.replace(/"/g, '""')}"`;
+        };
+        
         window.exportCSV = () => {
             let csvContent = "Titulo,Referencia,Géneros Musicales,Enlace,Solicitudes(Clics)\n";
             window.songs.forEach(s => {
                 const genresArr = getGenresArray(s.genero);
                 csvContent += `${escapeCSV(s.titulo)},${escapeCSV(s.ref)},${escapeCSV(genresArr.join(' | '))},${escapeCSV(s.link)},${s.clicks || 0}\n`;
             });
-            const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csvContent], { type: 'text/csv;charset=utf-8' });
             const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
             link.setAttribute("href", url);
@@ -2471,7 +2547,7 @@
                 alert(`¡Éxito! Se importaron ${addedCount} piezas.`);
                 event.target.value = '';
             };
-            reader.readAsText(file);
+            reader.readAsText(file, 'UTF-8');
         };
 
         // --- Listeners y Animaciones Iniciales ---
